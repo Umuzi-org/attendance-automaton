@@ -19,7 +19,7 @@ Definitions, restated so an inheritor doesn't have to reverse-engineer them:
 
 from dataclasses import dataclass
 
-from ..attendance.config import ATTENDANCE_THRESHOLD
+from attendance.config import ATTENDANCE_THRESHOLD
 
 @dataclass
 class AttendanceResult:
