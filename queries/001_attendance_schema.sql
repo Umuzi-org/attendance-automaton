@@ -4,7 +4,7 @@
 -- Grain model:  session (calendar event) -> conference(s) -> participant sessions
 -- planned_sessions (intent, written by the Retool setup form) joins to
 -- meeting_sessions (observed, written by the pipeline) on calendar_event_id.
--- All timestamps are timestamptz (UTC). EAT is a fixed UTC+3, no DST, so
+-- All timestamps are timestamptz (UTC). SAST is a fixed UTC+2, no DST, so
 -- date_service_accessed is computed as (actual_start + 3 hours)::date.
 --
 -- NOTE ON MIGRATION DISCIPLINE: if 001 (v1) has already been applied in any
