@@ -1,0 +1,2 @@
+[console_scripts]
+attendance-run = attendance.orchestration.cli:main

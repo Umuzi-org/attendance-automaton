@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "attendance-automaton"
+version = "0.1.0"
+description = "Automated Google Meet attendance tracking for Umuzi sessions, feeding IDC reporting."
+readme = "README.md"
+requires-python = ">=3.11"
+
+# Pinned with lower bounds; exact versions are locked in requirements.txt for
+# reproducible CI. fromisoformat()'s full RFC3339 handling and the walrus/union
+# syntax used across the package assume 3.11+.
+dependencies = [
+    "google-auth>=2.0",
+    "google-auth-oauthlib>=1.0",
+    "google-api-python-client>=2.0",
+    "psycopg2-binary>=2.9",
+]
+
+[project.optional-dependencies]
+# Dev-only tooling; install with:  pip install -e ".[dev]"
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+# The pipeline's entry point. After `pip install -e .` this puts an
+# `attendance-run` command on PATH that calls main() in the orchestration CLI.
+[project.scripts]
+attendance-run = "attendance.orchestration.cli:main"
+
+[tool.setuptools.packages.find]
+# Single top-level package `attendance`, with `attendance.orchestration` found
+# automatically as a subpackage. Nothing else in the repo root is packaged.
+include = ["attendance*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

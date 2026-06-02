@@ -1,0 +1,17 @@
+LICENSE
+pyproject.toml
+attendance/__init__.py
+attendance/auth.py
+attendance/calendar_source.py
+attendance/config.py
+attendance/rules.py
+attendance/session_type.py
+attendance/orchestration/__init__.py
+attendance/orchestration/cli.py
+attendance/orchestration/pipeline.py
+attendance_automaton.egg-info/PKG-INFO
+attendance_automaton.egg-info/SOURCES.txt
+attendance_automaton.egg-info/dependency_links.txt
+attendance_automaton.egg-info/entry_points.txt
+attendance_automaton.egg-info/requires.txt
+attendance_automaton.egg-info/top_level.txt

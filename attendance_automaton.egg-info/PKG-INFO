@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: attendance-automaton
+Version: 0.1.0
+Summary: Automated Google Meet attendance tracking for Umuzi sessions, feeding IDC reporting.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: google-auth>=2.0
+Requires-Dist: google-auth-oauthlib>=1.0
+Requires-Dist: google-api-python-client>=2.0
+Requires-Dist: psycopg2-binary>=2.9
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+Dynamic: license-file
