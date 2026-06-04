@@ -120,6 +120,8 @@ def resolve_participant(cur, ignore: IgnoreList, google_user_id: str | None,
     display_name    : the Meet display name, used for the name match.
     session_invitees: org-domain invitee emails for THIS session (lowercased).
     """
+    
+    # Is this an anonymous participant?
     if not google_user_id:
         return IdentityResolution(None, None, "unmatched")
 
