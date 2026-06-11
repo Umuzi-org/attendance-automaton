@@ -39,7 +39,7 @@ CREATE TABLE learner_identity_map (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     google_user_id  TEXT,
     email           TEXT,                            -- lowercased + trimmed before insert
-    learner_id      INT NOT NULL REFERENCES learners(learner_id) ON DELETE CASCADE,
+    learner_id      INT NOT NULL REFERENCES learners(id) ON DELETE CASCADE,
     match_method    TEXT NOT NULL
         CHECK (match_method IN ('email_exact','user_id_exact','manual','name_fuzzy')),
     confidence      NUMERIC(4,3),
