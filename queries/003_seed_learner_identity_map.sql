@@ -14,7 +14,7 @@
 INSERT INTO learner_identity_map (email, learner_id, match_method)
 SELECT DISTINCT ON (lower(trim(lm.umuzi_email)))
     lower(trim(lm.umuzi_email)) AS email,
-    lm.id::text                 AS learner_id,
+    lm.id                 AS learner_id,
     'email_exact'               AS match_method
 FROM learners AS lm
 WHERE lm.umuzi_email IS NOT NULL
