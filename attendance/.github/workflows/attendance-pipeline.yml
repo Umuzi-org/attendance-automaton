@@ -1,0 +1,62 @@
+name: attendance-pipeline
+
+on:
+  # Manual trigger -- this is the button for tomorrow's first run.
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        type: choice
+        options: [nightly, weekly, custom]
+        default: nightly
+      since:
+        description: "ISO start (custom mode only)"
+        required: false
+      until:
+        description: "ISO end (custom mode only)"
+        required: false
+
+  schedule:
+    # Cron is in UTC. SAST = UTC+2, no DST.
+    - cron: "0 1 * * *"    # 03:00 SAST nightly  -> mode: nightly (rolling 36h)
+    - cron: "0 2 * * 0"    # 04:00 SAST Sundays  -> mode: weekly  (7-day safety net)
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Decide mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 2 * * 0" ]; then
+            echo "mode=weekly" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=nightly" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run pipeline
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GOOGLE_TOKEN_URI: ${{ secrets.GOOGLE_TOKEN_URI }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ "${{ steps.mode.outputs.mode }}" = "custom" ]; then
+            attendance-run --mode custom --since "${{ inputs.since }}" --until "${{ inputs.until }}"
+          else
+            attendance-run --mode "${{ steps.mode.outputs.mode }}"
+          fi
