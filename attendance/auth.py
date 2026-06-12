@@ -7,14 +7,10 @@ client in this package accepts. No interactive flow ever runs here.
 
 import os
 
-from dotenv import load_dotenv
-
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
 from config import SCOPES
-
-load_dotenv()
 
 
 def get_credentials():
