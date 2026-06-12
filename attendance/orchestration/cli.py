@@ -18,9 +18,9 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg2
 
-from ..config import SAST, CALENDAR_ID
-from ..auth import get_credentials
-from . import pipeline
+from attendance.config import SAST, CALENDAR_ID
+from attendance.auth import get_credentials
+from attendance.orchestration import pipeline
 
 
 def _utc_iso(dt):

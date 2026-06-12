@@ -36,7 +36,7 @@ DESIGN NOTES (the decisions worth understanding before editing):
 
 from datetime import timezone, timedelta
 
-from .config import SAST
+from attendance.config import SAST
 
 
 def _to_sast_date(dt):

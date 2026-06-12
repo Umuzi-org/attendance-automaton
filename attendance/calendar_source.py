@@ -12,7 +12,7 @@ from datetime import datetime
 
 from googleapiclient.discovery import build
 
-from config import ORG_DOMAIN, SAST
+from attendance.config import ORG_DOMAIN, SAST
 
 
 @dataclass

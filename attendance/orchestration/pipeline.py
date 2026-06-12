@@ -24,7 +24,7 @@ this wrong and you fabricate absences for sessions you were never able to watch.
 
 import logging
 
-from .. import calendar_source, meet_source, session_type, identity, rules, reconcile, persist
+from attendance import calendar_source, meet_source, session_type, identity, rules, reconcile, persist
 
 log = logging.getLogger("attendance.pipeline")
 
