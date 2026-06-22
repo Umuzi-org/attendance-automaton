@@ -144,7 +144,7 @@ CREATE TABLE meeting_attendance (
     id                     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     calendar_event_id      TEXT NOT NULL
         REFERENCES meeting_sessions(calendar_event_id) ON DELETE CASCADE,
-    learner_id             TEXT NOT NULL,
+    learner_id             INTEGER NOT NULL,
     participant_email      TEXT,
     session_type_code      TEXT,
     date_service_accessed  DATE,
@@ -173,7 +173,7 @@ CREATE TABLE unmatched_participants (
     participant_minutes       INTEGER,
     status                    TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending','resolved','ignored')),
-    resolved_to_learner_id    TEXT,
+    resolved_to_learner_id    INTEGER REFERENCES learners(id),
     reviewed_at               TIMESTAMPTZ,
     reviewed_by               TEXT,
     created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
