@@ -60,3 +60,12 @@ jobs:
           else
             attendance-run --mode "${{ steps.mode.outputs.mode }}"
           fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Attendance pipeline FAILED on run ${{ github.run_id }}" >&2
+          # Minimal: GitHub already emails the actor on failure.
+          # Slack upgrade later: curl -X POST -H 'Content-type: application/json' \
+          #   --data "{\"text\":\"Attendance pipeline failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          #   "${{ secrets.SLACK_WEBHOOK_URL }}"
