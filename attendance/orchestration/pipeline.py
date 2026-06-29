@@ -145,7 +145,7 @@ def process_session(conn, meet_service, ignore, candidate):
 
     # Resolve to conference record(s).
     scheduled_seconds = None
-    if candidate.scheduled_sart and candidate.scheduled_end:
+    if candidate.scheduled_start and candidate.scheduled_end:
         scheduled_seconds = int(
             (candidate.scheduled_end - candidate.scheduled_start).total_seconds()
         )
