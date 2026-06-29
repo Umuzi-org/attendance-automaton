@@ -144,7 +144,13 @@ def process_session(conn, meet_service, ignore, candidate):
         return "skipped_no_meet"
 
     # Resolve to conference record(s).
-    confs = meet_source.get_session_conferences(meet_service, candidate.meeting_code)
+    scheduled_seconds = None
+    if candidate.scheduled_sart and candidate.scheduled_end:
+        scheduled_seconds = int(
+            (candidate.scheduled_end - candidate.scheduled_start).total_seconds()
+        )
+    
+    confs = meet_source.get_session_conferences(meet_service, candidate.meeting_code, scheduled_seconds=scheduled_seconds)
 
     # ---- OBSERVABILITY GATE -------------------------------------------------
     if not confs.ran:

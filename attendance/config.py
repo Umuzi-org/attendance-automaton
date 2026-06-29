@@ -36,6 +36,14 @@ ATTENDANCE_THRESHOLD = 0.5
 # become hard to "attend" — watch this against real 1:1 durations and adjust.
 DENOMINATOR_FLOOR_SECONDS = 30 * 60
 
+# Grace window for the denominator cap. A session's denominator is capped at its
+# scheduled duration plus this grace, so a recording left running long after the
+# real session ended (e.g. the technical account lingering) can't inflate the
+# denominator and unfairly sink everyone's attendance. Only applied when a
+# trustworthy scheduled duration exists; otherwise the actual conference duration
+# is used as before. Tunable after the one-month review.
+DENOMINATOR_GRACE_SECONDS = 15 * 60
+
 # Confidence stamped on identity rows resolved by invite-scoped name match.
 # Set below 1.0 (vs. email_exact bindings) so these can be spot-checked or
 # filtered later without a code change -- e.g. the Retool review UI can surface

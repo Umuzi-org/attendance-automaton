@@ -15,6 +15,7 @@ from googleapiclient.discovery import build
 from attendance.config import (
     MIN_PARTICIPANTS_FOR_REAL_CONFERENCE,
     DENOMINATOR_FLOOR_SECONDS,
+    DENOMINATOR_GRACE_SECONDS
 )
 
 
@@ -83,7 +84,7 @@ def _classify(participant):
     return "unknown", None, ""
 
 
-def get_session_conferences(meet, meeting_code):
+def get_session_conferences(meet, meeting_code, scheduled_seconds=None):
     result = SessionConferences(meeting_code=meeting_code)
 
     records = list(
@@ -153,9 +154,22 @@ def get_session_conferences(meet, meeting_code):
     result.actual_duration_seconds = sum(
         c.duration_seconds for c in result.kept_conferences
     )
-    result.denominator_seconds = (
-        max(result.actual_duration_seconds, DENOMINATOR_FLOOR_SECONDS)
-        if result.ran
-        else 0
-    )
+    if not result.ran:
+        result.denominator_seconds = 0
+        return result
+    
+    # start from the real conference duration
+    denominator = result.actual_duration_seconds
+    
+    # Cap at scheduled + grace when a trustworthy schedule exists. This clips a
+    # lingering recording (technical account left in the call) out of the math:
+    # a 60-min session whose recording ran 112 min is still measured against ~60.
+    # No schedule -> fall back to actual duration (prior behaviour).
+    if scheduled_seconds and scheduled_seconds > 0:
+        denominator = min(denominator, scheduled_seconds + DENOMINATOR_GRACE_SECONDS)
+      
+    # Floor guards degenerate short conferences. Applied last so the floor always
+    # wins: a 10-min scheduled session still gets the 30-min floor, not 25.  
+    result.denominator_seconds = max(denominator, DENOMINATOR_FLOOR_SECONDS)  
+    
     return result
