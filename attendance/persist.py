@@ -139,12 +139,14 @@ def _upsert_conferences(cur, eid, conferences):
             """
             INSERT INTO meeting_conferences (
                 conference_record_id, calendar_event_id, meet_space_code,
-                conference_start, conference_end, duration_minutes
+                conference_start, conference_end, duration_minutes, denominator_minutes
+                -- TODO: service name is not written for now
             ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (conference_record_id) DO UPDATE SET
                 conference_start = EXCLUDED.conference_start,
                 conference_end   = EXCLUDED.conference_end,
-                duration_minutes = EXCLUDED.duration_minutes
+                duration_minutes = EXCLUDED.duration_minutes,
+                denominator_minutes = EXCLUDED.denominator_minutes
             """,
             (
                 c.conference_record_id, eid, getattr(c, "meet_space_code", None),

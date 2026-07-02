@@ -65,6 +65,7 @@ class AttendanceRow:
     attended: bool
     attendance_pct: float
     participant_minutes: int
+    denominator_minutes: int
 
 
 @dataclass
@@ -84,7 +85,7 @@ class ReconcileResult:
     unmatched_rows: list
 
 
-def reconcile(invitee_learner_map: dict, attendees: list) -> ReconcileResult:
+def reconcile(invitee_learner_map: dict, attendees: list, denominator_minutes: int) -> ReconcileResult:
     attendance_rows = []
     unmatched_rows = []
 
@@ -127,6 +128,7 @@ def reconcile(invitee_learner_map: dict, attendees: list) -> ReconcileResult:
                     attended=rec.attended,
                     attendance_pct=rec.attendance_pct,
                     participant_minutes=rec.participant_minutes,
+                    denominator_minutes=denominator_minutes
                 )
             )
         else:
@@ -139,6 +141,7 @@ def reconcile(invitee_learner_map: dict, attendees: list) -> ReconcileResult:
                     attended=False,
                     attendance_pct=0.0,
                     participant_minutes=0,
+                    denominator_minutes=denominator_minutes
                 )
             )
 
@@ -154,6 +157,7 @@ def reconcile(invitee_learner_map: dict, attendees: list) -> ReconcileResult:
                     attended=rec.attended,
                     attendance_pct=rec.attendance_pct,
                     participant_minutes=rec.participant_minutes,
+                    denominator_minutes=denominator_minutes
                 )
             )
 
