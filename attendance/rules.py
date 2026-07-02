@@ -46,7 +46,7 @@ def evaluate_attendance(participant_seconds: int, denominator_seconds: int) -> A
             participant_minutes=round(participant_seconds / 60),
         )
 
-    pct = participant_seconds / denominator_seconds
+    pct = min(1.0, participant_seconds / denominator_seconds)
     return AttendanceResult(
         present=present,
         attended=pct >= ATTENDANCE_THRESHOLD,
