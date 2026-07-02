@@ -184,9 +184,9 @@ def _upsert_attendance(cur, eid, session_type_code, date_accessed, rows):
                 calendar_event_id, learner_id, participant_email,
                 session_type_code, date_service_accessed,
                 invited, present, attended,
-                participant_minutes, attendance_pct, computed_at, denominator_minutes
+                participant_minutes, attendance_pct, denominator_minutes, computed_at
                 -- TODO: service name is not written for now
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
             ON CONFLICT (calendar_event_id, learner_id) DO UPDATE SET
                 participant_email     = EXCLUDED.participant_email,
                 session_type_code     = EXCLUDED.session_type_code,
@@ -204,6 +204,7 @@ def _upsert_attendance(cur, eid, session_type_code, date_accessed, rows):
                 session_type_code, date_accessed,
                 r.invited, r.present, r.attended,
                 r.participant_minutes, round(r.attendance_pct, 4),
+                r.denominator_minutes
             ),
         )
 
