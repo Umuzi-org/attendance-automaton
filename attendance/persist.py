@@ -139,14 +139,12 @@ def _upsert_conferences(cur, eid, conferences):
             """
             INSERT INTO meeting_conferences (
                 conference_record_id, calendar_event_id, meet_space_code,
-                conference_start, conference_end, duration_minutes, denominator_minutes
-                -- TODO: service name is not written for now
+                conference_start, conference_end, duration_minutes
             ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (conference_record_id) DO UPDATE SET
                 conference_start = EXCLUDED.conference_start,
                 conference_end   = EXCLUDED.conference_end,
-                duration_minutes = EXCLUDED.duration_minutes,
-                denominator_minutes = EXCLUDED.denominator_minutes
+                duration_minutes = EXCLUDED.duration_minutes
             """,
             (
                 c.conference_record_id, eid, getattr(c, "meet_space_code", None),
@@ -186,7 +184,8 @@ def _upsert_attendance(cur, eid, session_type_code, date_accessed, rows):
                 calendar_event_id, learner_id, participant_email,
                 session_type_code, date_service_accessed,
                 invited, present, attended,
-                participant_minutes, attendance_pct, computed_at
+                participant_minutes, attendance_pct, computed_at, denominator_minutes
+                -- TODO: service name is not written for now
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
             ON CONFLICT (calendar_event_id, learner_id) DO UPDATE SET
                 participant_email     = EXCLUDED.participant_email,
@@ -197,6 +196,7 @@ def _upsert_attendance(cur, eid, session_type_code, date_accessed, rows):
                 attended              = EXCLUDED.attended,
                 participant_minutes   = EXCLUDED.participant_minutes,
                 attendance_pct        = EXCLUDED.attendance_pct,
+                denominator_minutes = EXCLUDED.denominator_minutes,
                 computed_at           = now()
             """,
             (
