@@ -16,30 +16,50 @@ CREATE TABLE attendance_overrides (
 -- This view will now show the override type if it exists, otherwise it will show the original attendance status.
 
 CREATE OR REPLACE VIEW v_meeting_attendance AS
+WITH attendance AS (
+    SELECT
+        a.calendar_event_id,
+        a.learner_id,
+        a.participant_email,
+        a.session_type_code,
+        a.date_service_accessed,
+        a.invited,
+        a.present,
+        a.attended,
+        a.participant_minutes,
+        a.denominator_minutes,
+        a.attendance_pct,
+        a.service_name
+    FROM meeting_attendance AS a
+)
 SELECT
-    ma.calendar_event_id,
-    ma.learner_id,
-    ma.participant_email,
-    ma.session_type_code,
-    ma.date_service_accessed,
-    ma.invited,
-    ma.present,
-    ma.attended,                                   -- raw bot verdict, untouched
-    ma.participant_minutes,
-    ma.denominator_minutes,
-    ma.attendance_pct,
+    -- original columns, original order: DO NOT reorder or rename
+    att.calendar_event_id,
+    att.date_service_accessed,
+    att.learner_id,
+    att.participant_email,
+    att.session_type_code,
+    st.display_name        AS session_type,
+    s.session_title_raw    AS session_title,
+    att.invited,
+    att.present,
+    att.attended,
+    att.participant_minutes,
+    att.denominator_minutes,
+    att.attendance_pct,
+    att.service_name,
+    -- appended override columns (new positions only)
     o.override_type,
-    o.reason           AS override_reason,
-    o.created_by       AS override_by,
-    -- the number reporting should use:
+    o.reason               AS override_reason,
+    o.created_by           AS override_by,
     CASE
         WHEN o.override_type IN ('excused', 'present') THEN true
         WHEN o.override_type = 'absent'                THEN false
-        ELSE ma.attended
-    END AS effective_attended,
-    ma.computed_at,
-    ma.computed_at AT TIME ZONE 'Africa/Johannesburg' AS computed_at_sast
-FROM meeting_attendance ma
-LEFT JOIN attendance_overrides o
-    ON  o.calendar_event_id = ma.calendar_event_id
-    AND o.learner_id        = ma.learner_id;
+        ELSE att.attended
+    END AS effective_attended
+FROM attendance AS att
+JOIN meeting_sessions AS s   ON s.calendar_event_id = att.calendar_event_id
+LEFT JOIN session_types AS st ON st.code = att.session_type_code
+LEFT JOIN attendance_overrides AS o
+    ON  o.calendar_event_id = att.calendar_event_id
+    AND o.learner_id        = att.learner_id;
