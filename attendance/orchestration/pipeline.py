@@ -112,15 +112,16 @@ def _session_record(candidate, rtype, conferences_obj):
         invited_count=len(candidate.org_invitees),
     )
 
-def _persist_no_show(conn, candidate, rtype, confs):
+def _persist_no_show(conn, candidate, rtype):
     """Write a session we organized that never really ran: all invitees absent."""
     with conn.cursor() as cur:
         invitee_emails = [i.email for i in candidate.org_invitees]
         invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
-    result = reconcile.reconcile(invitee_learner_map, attendees=[], denominator_minutes=_seconds_to_minutes(confs.denominator_seconds))
+        session_record = _session_record(candidate ,rtype, conferences_obj=None)
+    result = reconcile.reconcile(invitee_learner_map, attendees=[], denominator_minutes=session_record.denominator_minutes)
     persist.persist_session(
         conn,
-        session=_session_record(candidate, rtype, conferences_obj=None),
+        session=session_record,
         conferences=[],
         raw_participants=[],
         attendance_rows=result.attendance_rows,
@@ -157,7 +158,7 @@ def process_session(conn, meet_service, ignore, candidate):
         if candidate.organized_by_us:
             # True no-show: write the session with everyone absent.
             log.info("no-show %s: organized by us, zero real conferences", eid)
-            _persist_no_show(conn, candidate, rtype, confs)
+            _persist_no_show(conn, candidate, rtype)
             return "no_show"
         # Not ours -> we genuinely cannot see it. Do NOT fabricate absences.
         log.info("skip %s: not organized by us and no conferences (unobservable)", eid)
@@ -187,10 +188,12 @@ def process_session(conn, meet_service, ignore, candidate):
             ))
         invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
 
-    result = reconcile.reconcile(invitee_learner_map, attendees, denominator_minutes=_seconds_to_minutes(confs.denominator_seconds))
+    session_record = _session_record(candidate=candidate, rtype=rtype, conferences_obj=confs)
+    
+    result = reconcile.reconcile(invitee_learner_map, attendees,
+                                 denominator_minutes=session_record.denominator_minutes)
 
     # Stamp the observed session facts onto the candidate for persistence.
-    session_record = _session_record(candidate, rtype, confs)
     persist.persist_session(
         conn,
         session=session_record,
