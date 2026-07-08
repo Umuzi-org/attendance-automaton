@@ -25,4 +25,4 @@ JOIN learner_status_lookup lsl
 WHERE lsl.status = 'Enrolled';
 
 
--- log is changes-only (5,887 untouched pathways as of Jul 2026); LPP status is authoritative for never-changed rows
+-- log is changes-only (5,887 untouched pathways as of Jul 2026); LPP status is authoritative for never-changed row
