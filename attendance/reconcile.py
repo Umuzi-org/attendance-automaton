@@ -66,6 +66,7 @@ class AttendanceRow:
     attendance_pct: float
     participant_minutes: int
     denominator_minutes: int
+    google_user_id: str | None = None  # who this resoled from when they attended
 
 
 @dataclass
@@ -128,7 +129,8 @@ def reconcile(invitee_learner_map: dict, attendees: list, denominator_minutes: i
                     attended=rec.attended,
                     attendance_pct=rec.attendance_pct,
                     participant_minutes=rec.participant_minutes,
-                    denominator_minutes=denominator_minutes
+                    denominator_minutes=denominator_minutes,
+                    google_user_id=rec.google_user_id
                 )
             )
         else:
@@ -157,7 +159,8 @@ def reconcile(invitee_learner_map: dict, attendees: list, denominator_minutes: i
                     attended=rec.attended,
                     attendance_pct=rec.attendance_pct,
                     participant_minutes=rec.participant_minutes,
-                    denominator_minutes=denominator_minutes
+                    denominator_minutes=denominator_minutes,
+                    google_user_id=rec.google_user_id
                 )
             )
 
