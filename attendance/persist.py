@@ -76,6 +76,7 @@ def persist_session(conn, *, session, conferences, raw_participants,
             _upsert_attendance(cur, eid, session.session_type_code,
                                date_accessed, attendance_rows)
             _upsert_unmatched(cur, eid, conferences, unmatched_rows)
+            _resolve_stale_unmatched(cur, eid, attendance_rows)
         conn.commit()
     except Exception:
         conn.rollback()
@@ -232,3 +233,28 @@ def _upsert_unmatched(cur, eid, conferences, rows):
                 u.display_name, u.matched_email, u.participant_minutes,
             ),
         )
+        
+def _resolve_stale_unmatched(cur, eid, attendance_rows):
+    """Self-cleaning queue: if a participant resolved this run (cache or name
+    match), any still-pending review row for them ON THIS SESSION is now moot --
+    the attendance row it was standing in for is being written in this same
+    transaction. Scoped to this session only: pending rows on other sessions
+    remain as the signal that those sessions still need a re-run. Human
+    decisions (status != 'pending') are never touched."""
+    for r in attendance_rows:
+        if r.google_user_id is None:
+            continue
+        cur.execute(
+            """
+            UPDATE unmatched_participants
+            SET status                 = 'resolved',
+                resolved_to_learner_id = %s,
+                reviewed_at            = now(),
+                reviewed_by            = 'pipeline-cache'
+            WHERE calendar_event_id = %s
+              AND google_user_id    = %s
+              AND status            = 'pending'
+            """,
+            (r.learner_id, eid, r.google_user_id),
+        )
+        
