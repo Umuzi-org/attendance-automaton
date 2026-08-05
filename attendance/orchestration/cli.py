@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg2
 
-from attendance.config import SAST, CALENDAR_ID
+from attendance.config import SAST, CALENDAR_ID, ACCOUNTS
 from attendance.auth import get_credentials
 from attendance.orchestration import pipeline
 
@@ -68,17 +68,32 @@ def main(argv=None):
         args.mode, args.since, args.until, args.lookback_hours
     )
 
-    creds = get_credentials()
+
     conn = _connect()
+    totals = {}
+    failed_accounts = []
     try:
-        tally = pipeline.run(conn, creds, time_min, time_max, args.calendar_id)
+        for dept_key, token_env in ACCOUNTS.items():
+            try:
+                creds = get_credentials(refresh_token_env=token_env)
+                tally = pipeline.run(
+                    conn, creds, time_min, time_max, args.calendar_id, department_key=dept_key
+                )
+                log.info("Account %s: %s", dept_key, tally)
+                
+                for k, v in tally.items():
+                    totals[k] = totals.get(k, 0) + v
+                    
+            except Exception:
+                log.exception("Account %s failed; continuing", dept_key)
+                failed_accounts.append(dept_key)
     finally:
         conn.close()
 
     # Non-zero exit if any session errored, so the scheduled job surfaces it.
-    errors = tally.get("error", 0)
-    log.info("done: %s", tally)
-    return 1 if errors else 0
+    errors = totals.get("error", 0)
+    log.info("done: %s (failed accounts: %s)", totals, failed_accounts or "none")
+    return 1 if errors or failed_accounts else 0
 
 
 if __name__ == "__main__":

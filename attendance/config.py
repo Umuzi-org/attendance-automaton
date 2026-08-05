@@ -49,3 +49,14 @@ DENOMINATOR_GRACE_SECONDS = 15 * 60
 # filtered later without a code change -- e.g. the Retool review UI can surface
 # bindings below a confidence cutoff for a human to confirm.
 NAME_MATCH_CONFIDENCE = 0.900
+
+
+# Department accounts the pipeline reads. Key must match departments.key in
+# Postgres exactly -- it is stamped onto meeting_sessions.department_key.
+# Value is the environment variable holding that account's refresh token.
+# Adding a department: one line here, one secret in GitHub, one mint run.
+ACCOUNTS = {
+    "technical": "GOOGLE_REFRESH_TOKEN_TECHNICAL",
+    "experience_labs": "GOOGLE_REFRESH_TOKEN_EXPERIENCE_LABS",
+    "launch_labs": "GOOGLE_REFRESH_TOKEN_LAUNCH_LABS",
+}

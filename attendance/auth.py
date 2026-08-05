@@ -13,10 +13,10 @@ from google.auth.transport.requests import Request
 from attendance.config import SCOPES
 
 
-def get_credentials():
+def get_credentials(refresh_token_env: str):
     creds = Credentials(
         token=None,  # forces a refresh on first use
-        refresh_token=os.environ["GOOGLE_REFRESH_TOKEN"],
+        refresh_token=os.environ[refresh_token_env],
         client_id=os.environ["GOOGLE_CLIENT_ID"],
         client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
         token_uri=os.environ["GOOGLE_TOKEN_URI"],

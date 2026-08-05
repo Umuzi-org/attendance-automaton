@@ -1,5 +1,9 @@
 name: attendance-pipeline
 
+concurrency:
+  group: attendance-pipeline
+  cancel-in-progress: false
+
 on:
   # Manual trigger -- this is the button for tomorrow's first run.
   workflow_dispatch:
@@ -51,7 +55,9 @@ jobs:
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GOOGLE_REFRESH_TOKEN_TECHNICAL: ${{ secrets.GOOGLE_REFRESH_TOKEN_TECHNICAL }}
+          GOOGLE_REFRESH_TOKEN_EXPERIENCE_LABS: ${{ secrets.GOOGLE_REFRESH_TOKEN_EXPERIENCE_LABS }}
+          GOOGLE_REFRESH_TOKEN_LAUNCH_LABS: ${{ secrets.GOOGLE_REFRESH_TOKEN_LAUNCH_LABS }}
           GOOGLE_TOKEN_URI: ${{ secrets.GOOGLE_TOKEN_URI }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |

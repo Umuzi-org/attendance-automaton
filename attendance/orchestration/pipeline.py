@@ -77,7 +77,7 @@ def _raw_rows_for_session(conferences_obj):
             })
     return rows
 
-def _session_record(candidate, rtype, conferences_obj):
+def _session_record(candidate, rtype, conferences_obj, department_key=None):
     """Build the flat object persist.persist_session expects, merging the
     calendar facts (scheduled, organizer, type) with the observed facts
     (actual times, durations, conference count)."""
@@ -110,14 +110,15 @@ def _session_record(candidate, rtype, conferences_obj):
         denominator_minutes=denom_minutes,
         conference_count=conf_count,
         invited_count=len(candidate.org_invitees),
+        department_key=department_key
     )
 
-def _persist_no_show(conn, candidate, rtype):
+def _persist_no_show(conn, candidate, rtype, department_key=None):
     """Write a session we organized that never really ran: all invitees absent."""
     with conn.cursor() as cur:
         invitee_emails = [i.email for i in candidate.org_invitees]
         invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
-        session_record = _session_record(candidate ,rtype, conferences_obj=None)
+        session_record = _session_record(candidate ,rtype,conferences_obj=None, department_key=department_key)
     result = reconcile.reconcile(invitee_learner_map, attendees=[], denominator_minutes=session_record.denominator_minutes)
     persist.persist_session(
         conn,
@@ -129,7 +130,7 @@ def _persist_no_show(conn, candidate, rtype):
     )
 
 
-def process_session(conn, meet_service, ignore, candidate):
+def process_session(conn, meet_service, ignore, candidate, department_key):
     """Process one CandidateSession end to end. Returns a short status string."""
     eid = candidate.calendar_event_id
 
@@ -158,7 +159,7 @@ def process_session(conn, meet_service, ignore, candidate):
         if candidate.organized_by_us:
             # True no-show: write the session with everyone absent.
             log.info("no-show %s: organized by us, zero real conferences", eid)
-            _persist_no_show(conn, candidate, rtype)
+            _persist_no_show(conn, candidate, rtype, department_key=department_key)
             return "no_show"
         # Not ours -> we genuinely cannot see it. Do NOT fabricate absences.
         log.info("skip %s: not organized by us and no conferences (unobservable)", eid)
@@ -188,7 +189,7 @@ def process_session(conn, meet_service, ignore, candidate):
             ))
         invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
 
-    session_record = _session_record(candidate=candidate, rtype=rtype, conferences_obj=confs)
+    session_record = _session_record(candidate=candidate, rtype=rtype, conferences_obj=confs, department_key=department_key)
     
     result = reconcile.reconcile(invitee_learner_map, attendees,
                                  denominator_minutes=session_record.denominator_minutes)
@@ -210,7 +211,7 @@ def process_session(conn, meet_service, ignore, candidate):
 
 
 
-def run(conn, creds, time_min, time_max, calendar_id):
+def run(conn, creds, time_min, time_max, calendar_id, department_key):
     """Process every candidate session in [time_min, time_max]. Returns a tally
     of outcomes for the run summary / logging."""
     cal_service = calendar_source.build_calendar_service(creds)
@@ -227,7 +228,7 @@ def run(conn, creds, time_min, time_max, calendar_id):
     tally = {}
     for candidate in candidates:
         try:
-            status = process_session(conn, meet_service, ignore, candidate)
+            status = process_session(conn, meet_service, ignore, candidate, department_key=department_key)
         except Exception:
             log.exception("FAILED session %s", candidate.calendar_event_id)
             status = "error"

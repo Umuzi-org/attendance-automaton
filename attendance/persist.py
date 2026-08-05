@@ -91,11 +91,11 @@ def _upsert_session(cur, s, date_accessed):
             session_title_raw, meet_space_code, organizer_email,
             scheduled_start, scheduled_end, actual_start, actual_end,
             actual_duration_minutes, denominator_minutes, conference_count,
-            date_service_accessed, invited_count, updated_at
+            date_service_accessed, invited_count, updated_at, department_key
         ) VALUES (
             %(eid)s, %(type)s, %(type_src)s, %(title)s, %(space)s, %(org)s,
             %(ss)s, %(se)s, %(as)s, %(ae)s, %(dur)s, %(den)s, %(cc)s,
-            %(date)s, %(inv)s, now()
+            %(date)s, %(inv)s, now(), %(department_key)s
         )
         ON CONFLICT (calendar_event_id) DO UPDATE SET
             session_type_code       = EXCLUDED.session_type_code,
@@ -112,7 +112,8 @@ def _upsert_session(cur, s, date_accessed):
             conference_count        = EXCLUDED.conference_count,
             date_service_accessed   = EXCLUDED.date_service_accessed,
             invited_count           = EXCLUDED.invited_count,
-            updated_at              = now()
+            updated_at              = now(),
+            department_key          = EXCLUDED.department_key
         """,
         {
             "eid": s.calendar_event_id,
@@ -130,6 +131,7 @@ def _upsert_session(cur, s, date_accessed):
             "cc": s.conference_count,
             "date": date_accessed,
             "inv": s.invited_count,
+            "department_key": s.department_key,
         },
     )
 
