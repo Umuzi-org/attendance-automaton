@@ -23,6 +23,10 @@ from attendance.auth import get_credentials
 from attendance.orchestration import pipeline
 
 
+from pathlib import Path
+
+_RESEED_SQL = Path(__file__).resolve().parents[2] / "queries" / "maintenance" / "reseed_identity_map.sql"
+
 def _utc_iso(dt):
     """pipeline/calendar expect RFC3339 UTC strings."""
     return dt.astimezone(timezone.utc).isoformat()
@@ -45,6 +49,14 @@ def _connect():
     """Connection from DATABASE_URL (or PG* env vars psycopg2 reads natively)."""
     dsn = os.environ.get("DATABASE_URL")
     return psycopg2.connect(dsn) if dsn else psycopg2.connect()
+
+def _reseed_identity_map(conn, log):
+    """Enrolment is continuous; the 009 seed was one-shot. Idempotent."""
+    with conn.cursor() as cur:
+        cur.execute(_RESEED_SQL.read_text())
+        added = cur.rowcount
+    conn.commit()
+    log.info("Identity map reseeded: %d new rows", added)
 
 
 def main(argv=None):
@@ -70,6 +82,9 @@ def main(argv=None):
 
 
     conn = _connect()
+    
+    _reseed_identity_map(conn, log)
+    
     totals = {}
     failed_accounts = []
     try:
