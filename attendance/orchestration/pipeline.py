@@ -77,7 +77,7 @@ def _raw_rows_for_session(conferences_obj):
             })
     return rows
 
-def _session_record(candidate, rtype, conferences_obj, department_key=None):
+def _session_record(candidate, rtype, conferences_obj, *, department_key, invited_learner_count):
     """Build the flat object persist.persist_session expects, merging the
     calendar facts (scheduled, organizer, type) with the observed facts
     (actual times, durations, conference count)."""
@@ -109,16 +109,18 @@ def _session_record(candidate, rtype, conferences_obj, department_key=None):
         actual_duration_minutes=actual_minutes,
         denominator_minutes=denom_minutes,
         conference_count=conf_count,
-        invited_count=len(candidate.org_invitees),
+        invited_count=len(candidate.invitees),
+        invited_learner_count = invited_learner_count,
         department_key=department_key
     )
 
 def _persist_no_show(conn, candidate, rtype, department_key=None):
     """Write a session we organized that never really ran: all invitees absent."""
     with conn.cursor() as cur:
-        invitee_emails = [i.email for i in candidate.org_invitees]
+        invitee_emails = [i.email for i in candidate.invitees]
         invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
-        session_record = _session_record(candidate ,rtype,conferences_obj=None, department_key=department_key)
+        session_record = _session_record(candidate ,rtype,conferences_obj=None, department_key=department_key,
+                                         invited_learner_count=len(invitee_learner_map))
     result = reconcile.reconcile(invitee_learner_map, attendees=[], denominator_minutes=session_record.denominator_minutes)
     persist.persist_session(
         conn,
@@ -167,12 +169,13 @@ def process_session(conn, meet_service, ignore, candidate, department_key):
     # -------------------------------------------------------------------------
 
     # Assemble attendees: identity resolution + attendance evaluation per person.
-    invitee_emails = [i.email for i in candidate.org_invitees]
+    org_invitee_emails = [i.email for i in candidate.org_invitees]
+    all_invitee_emails = [i.email for i in candidate.invitees] 
     attendees = []
     with conn.cursor() as cur:
         for pt in confs.participants.values():
             res = identity.resolve_participant(
-                cur, ignore, pt.google_user_id, pt.display_name, invitee_emails
+                cur, ignore, pt.google_user_id, pt.display_name, org_invitee_emails
             )
             verdict = rules.evaluate_attendance(pt.total_seconds, confs.denominator_seconds)
             attendees.append(reconcile.AttendeeRecord(
@@ -187,9 +190,10 @@ def process_session(conn, meet_service, ignore, candidate, department_key):
                 attendance_pct=verdict.attendance_pct,
                 participant_minutes=verdict.participant_minutes,
             ))
-        invitee_learner_map = _build_invitee_learner_map(cur, invitee_emails)
+        invitee_learner_map = _build_invitee_learner_map(cur, all_invitee_emails)
 
-    session_record = _session_record(candidate=candidate, rtype=rtype, conferences_obj=confs, department_key=department_key)
+    session_record = _session_record(candidate=candidate, rtype=rtype, conferences_obj=confs,
+                                     department_key=department_key, invited_learner_count=len(invitee_learner_map))
     
     result = reconcile.reconcile(invitee_learner_map, attendees,
                                  denominator_minutes=session_record.denominator_minutes)
