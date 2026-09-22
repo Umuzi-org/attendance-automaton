@@ -20,16 +20,16 @@
 -- reviewer-written manual rows are preserved.
 -- ============================================================================
 
-WITH enrolled AS (
-    SELECT DISTINCT learner_id FROM v_enrolled_learners
+WITH trackable AS (
+    SELECT DISTINCT learner_id FROM v_trackable_learners
 ),
 emails AS (
     SELECT l.id AS learner_id, lower(l.umuzi_email) AS email
-    FROM learners l JOIN enrolled e ON e.learner_id = l.id
+    FROM learners l JOIN trackable t ON t.learner_id = l.id
     WHERE l.umuzi_email IS NOT NULL
     UNION
     SELECT l.id, lower(l.email)
-    FROM learners l JOIN enrolled e ON e.learner_id = l.id
+    FROM learners l JOIN trackable t ON t.learner_id = l.id
     WHERE l.email IS NOT NULL AND l.umuzi_email IS NULL  -- personal only as fallback
 )
 INSERT INTO learner_identity_map (email, learner_id, match_method, confidence)
