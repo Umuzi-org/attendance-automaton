@@ -60,3 +60,8 @@ ACCOUNTS = {
     "experience_labs": "GOOGLE_REFRESH_TOKEN_EXPERIENCE_LABS",
     "launch_labs": "GOOGLE_REFRESH_TOKEN_LAUNCH_LABS",
 }
+
+# Google deletes conference records 30 days after the conference ends
+# (ConferenceRecord.expireTime). Past that the Meet API returns nothing for a
+# session, which is indistinguishable from nobody having attended.
+MEET_RECORD_RETENTION_DAYS = 30

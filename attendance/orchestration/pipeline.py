@@ -18,13 +18,16 @@ Meet API only returns conference records for sessions technical@ organized. So
       the session with every invitee marked absent.
     - we did NOT organize it                       -> we simply cannot see it;
       persisting absences here would be FALSE DATA. Skip it, do not write.
+    - we organized it but the session is older than Meet's 30-day conference
+    record retention  -> the API's silence is expiry, not absence. Skip it.
 The gate distinguishes them using calendar_source's organized_by_us flag. Get
 this wrong and you fabricate absences for sessions you were never able to watch.
 """
 
 import logging
 
-from attendance import calendar_source, meet_source, session_type, identity, rules, reconcile, persist
+from datetime import datetime
+from attendance import calendar_source, meet_source, session_type, identity, rules, reconcile, persist, config
 
 log = logging.getLogger("attendance.pipeline")
 
@@ -156,8 +159,27 @@ def process_session(conn, meet_service, ignore, candidate, department_key):
     
     confs = meet_source.get_session_conferences(meet_service, candidate.meeting_code, scheduled_seconds=scheduled_seconds)
 
-    # ---- OBSERVABILITY GATE -------------------------------------------------
+        # ---- OBSERVABILITY GATE -------------------------------------------------
     if not confs.ran:
+        # Third skip reason, checked first. Google deletes conference records 30
+        # days after a conference ends, so past that "zero conferences" means
+        # the record expired, not that nobody came. organized_by_us is still
+        # true, so without this the branch below marks every invitee absent for
+        # every session in a backfill of an old window.
+        session_date = (
+            candidate.scheduled_start.astimezone(config.SAST).date()
+            if candidate.scheduled_start else None
+        )
+        if session_date is not None:
+            age_days = (datetime.now(config.SAST).date() - session_date).days
+            if age_days >= config.MEET_RECORD_RETENTION_DAYS - 1:
+                log.warning(
+                    "skip %s (%s, %dd old): past Meet record retention, "
+                    "absence cannot be distinguished from expiry",
+                    eid, session_date, age_days,
+                )
+                return "skipped_past_retention"
+
         if candidate.organized_by_us:
             # True no-show: write the session with everyone absent.
             log.info("no-show %s: organized by us, zero real conferences", eid)
