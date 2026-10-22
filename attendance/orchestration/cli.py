@@ -52,11 +52,16 @@ def _connect():
 
 def _reseed_identity_map(conn, log):
     """Enrolment is continuous; the 009 seed was one-shot. Idempotent."""
-    with conn.cursor() as cur:
-        cur.execute(_RESEED_SQL.read_text())
-        added = cur.rowcount
-    conn.commit()
-    log.info("Identity map reseeded: %d new rows", added)
+    try:
+        with conn.cursor() as cur:
+                cur.execute(_RESEED_SQL.read_text())
+                added = cur.rowcount
+        conn.commit()
+        log.info("Identity map reseeded: %d new rows", added)      
+    except Exception:
+        log.exception("Reseed failed")
+        conn.rollback()
+        
 
 
 def main(argv=None):

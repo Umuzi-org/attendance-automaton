@@ -10,6 +10,8 @@ GRANT SELECT ON session_types, ignored_identities TO attendance_bot;
 -- self healing cache: reads, learns new bindings, refreshes confirmations
 GRANT SELECT, UPDATE, INSERT ON learner_identity_map TO attendance_bot;
 
+GRANT SELECT ON learners, v_enrolled_learners TO attendance_bot;
+
 -- pipelne write surface
 GRANT SELECT, INSERT, UPDATE ON 
     meeting_sessions,

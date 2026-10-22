@@ -170,6 +170,10 @@ def process_session(conn, meet_service, ignore, candidate, department_key):
             candidate.scheduled_start.astimezone(config.SAST).date()
             if candidate.scheduled_start else None
         )
+        if session_date is not None and session_date > datetime.now(config.SAST).date():
+            log.warning("skip %s (%s): scheduled in the future, nothing to observe yet", eid, session_date)
+            return "skipped_future"
+        
         if session_date is not None:
             age_days = (datetime.now(config.SAST).date() - session_date).days
             if age_days >= config.MEET_RECORD_RETENTION_DAYS - 1:
