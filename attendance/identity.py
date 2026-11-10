@@ -15,8 +15,8 @@ The waterfall, in order, stopping at the first hit:
      match it against THIS session's invitee email local-parts. Scoping to the
      ~8 invitees (not the whole org) is what makes a name signal safe: a false
      match would have to ALSO be invited to this exact session. On a unique
-     match we write google_user_id -> email -> learner_id back to the identity
-     map (the self-healing cache), so step 1 catches them next time.
+     match we write google_user_id -> email -> learner_id back to the learner
+     google accounts table(the self-healing cache), so step 1 catches them next time.
   4. No confident match -> caller routes to unmatched_participants for a human
      to resolve once. After that, the cache (step 1) takes over.
 
@@ -80,10 +80,10 @@ def match_display_name_to_invitee(display_name: str, invitee_emails) -> str | No
 
 def _lookup_by_user_id(cur, google_user_id: str):
     cur.execute(
-        "SELECT learner_id, email FROM learner_identity_map WHERE google_user_id = %s",
+        "SELECT learner_id, matched_email FROM learner_google_accounts WHERE google_user_id = %s",
         (google_user_id,),
     )
-    return cur.fetchone()  # (learner_id, email) or None
+    return cur.fetchone()  # (learner_id, matched_email) or None
 
 
 def _lookup_by_email(cur, email: str):
@@ -94,6 +94,31 @@ def _lookup_by_email(cur, email: str):
     row = cur.fetchone()
     return row[0] if row else None
 
+
+def _bind_account(cur, google_user_id: str, email: str, learner_id: int) -> None:
+    """Record the account we just matched so future runs hit the O(1) cache.
+
+    Keyed on google_user_id, the account's own identity. A learner joining from
+    a second account gets a SECOND ROW here rather than evicting the first --
+    which is the thing the email-keyed map could not express. The old
+    'google_user_id IS NULL OR = %s' guard is gone because eviction is now
+    structurally impossible: a different account is a different row.
+
+    learner_id is never updated on conflict. First binding wins (Invariant 5:
+    each human is name-matched at most once ever); a later name collision in
+    some other session must not silently re-point an account at someone else.
+    """
+    cur.execute(
+        """
+        INSERT INTO learner_google_accounts
+            (google_user_id, learner_id, matched_email,
+             match_method, confidence, last_confirmed)
+        VALUES (%s, %s, %s, 'name_invite_match', %s, now())
+        ON CONFLICT (google_user_id) DO UPDATE
+            SET last_confirmed = now()
+        """,
+        (google_user_id, learner_id, email, NAME_MATCH_CONFIDENCE),
+    )
 
 def _cache_user_id(cur, google_user_id: str, email: str, learner_id: str) -> None:
     """Bind the freshly-matched google_user_id onto the existing email row so
@@ -141,7 +166,7 @@ def resolve_participant(cur, ignore: IgnoreList, google_user_id: str | None,
             return IdentityResolution(None, email, "ignored")
         learner_id = _lookup_by_email(cur, email)
         if learner_id:
-            _cache_user_id(cur, google_user_id, email, learner_id)
+            _bind_account(cur, google_user_id, email, learner_id)
             return IdentityResolution(learner_id, email, "name_invite_match")
         # Matched a real invitee, but that person isn't in the learner map yet
         # (e.g. a new joiner not seeded). Capture the email for the review queue.
