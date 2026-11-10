@@ -120,22 +120,6 @@ def _bind_account(cur, google_user_id: str, email: str, learner_id: int) -> None
         (google_user_id, learner_id, email, NAME_MATCH_CONFIDENCE),
     )
 
-def _cache_user_id(cur, google_user_id: str, email: str, learner_id: str) -> None:
-    """Bind the freshly-matched google_user_id onto the existing email row so
-    future runs hit the cache. Idempotent; keyed on the seeded email."""
-    cur.execute(
-        """
-        UPDATE learner_identity_map
-           SET google_user_id = %s,
-               match_method   = 'name_invite_match',
-               confidence     = %s,
-               last_confirmed = now()
-         WHERE email = %s
-           AND (google_user_id IS NULL OR google_user_id = %s)
-        """,
-        (google_user_id, NAME_MATCH_CONFIDENCE, email, google_user_id),
-    )
-
 
 def resolve_participant(cur, ignore: IgnoreList, google_user_id: str | None,
                         display_name: str, session_invitees) -> IdentityResolution:
