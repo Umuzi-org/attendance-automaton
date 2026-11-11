@@ -66,7 +66,7 @@ def persist_session(conn, *, session, conferences, raw_participants,
       unmatched_rows   : list[reconcile.UnmatchedRow].
     """
     eid = session.calendar_event_id
-    date_accessed = _to_sast_date(session.actual_start)
+    date_accessed = _to_sast_date(session.actual_start or session.scheduled_start)
 
     try:
         with conn.cursor() as cur:
